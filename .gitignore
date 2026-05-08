@@ -25,3 +25,6 @@ data/processed/*
 .DS_Store
 Thumbs.db
 .vscode/
+
+# Model artifacts
+models/*.joblib
