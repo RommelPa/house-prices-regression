@@ -27,6 +27,9 @@ FEATURE_GROUPS_PATH = PROCESSED_DATA_DIR / "feature_groups.json"
 
 MODEL_METRICS_PATH = REPORTS_DIR / "model_metrics.csv"
 BEST_MODEL_PATH = MODELS_DIR / "best_model.joblib"
+FINAL_MODEL_SELECTION_PATH = REPORTS_DIR / "final_model_selection.csv"
+
+FINAL_MODEL_NAME = "random_forest"
 
 RANDOM_STATE = 42
 
@@ -279,23 +282,50 @@ def save_outputs(
     trained_models: dict[str, Pipeline],
 ) -> None:
     """
-    Save model metrics and the best model.
+    Save model metrics and the final selected model.
+
+    The final model is selected based on cross-validation stability, not only
+    on a single validation split.
     """
     REPORTS_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
     results_df.to_csv(MODEL_METRICS_PATH, index=False)
 
-    best_model_name = results_df.loc[0, "model"]
-    best_model = trained_models[best_model_name]
+    validation_best_model_name = results_df.loc[0, "model"]
 
-    joblib.dump(best_model, BEST_MODEL_PATH)
+    if FINAL_MODEL_NAME not in trained_models:
+        raise ValueError(
+            f"Final model '{FINAL_MODEL_NAME}' was not found in trained models."
+        )
+
+    final_model = trained_models[FINAL_MODEL_NAME]
+    joblib.dump(final_model, BEST_MODEL_PATH)
+
+    final_model_selection = pd.DataFrame(
+        [
+            {
+                "validation_best_model": validation_best_model_name,
+                "final_selected_model": FINAL_MODEL_NAME,
+                "selection_reason": (
+                    "Random Forest was selected as the final predictive model "
+                    "because cross-validation showed better RMSE stability than "
+                    "linear models, even though Linear Regression performed best "
+                    "on a single validation split."
+                ),
+            }
+        ]
+    )
+
+    final_model_selection.to_csv(FINAL_MODEL_SELECTION_PATH, index=False)
 
     print("\nSaved outputs")
     print("-" * 80)
     print(f"Model metrics: {MODEL_METRICS_PATH}")
-    print(f"Best model: {BEST_MODEL_PATH}")
-    print(f"Best model name: {best_model_name}")
+    print(f"Final model selection: {FINAL_MODEL_SELECTION_PATH}")
+    print(f"Final model: {BEST_MODEL_PATH}")
+    print(f"Validation best model: {validation_best_model_name}")
+    print(f"Final selected model: {FINAL_MODEL_NAME}")
 
 
 def print_results(results_df: pd.DataFrame) -> None:

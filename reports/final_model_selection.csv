@@ -1,0 +1,2 @@
+validation_best_model,final_selected_model,selection_reason
+linear_regression,random_forest,"Random Forest was selected as the final predictive model because cross-validation showed better RMSE stability than linear models, even though Linear Regression performed best on a single validation split."
